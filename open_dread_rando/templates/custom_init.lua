@@ -1,5 +1,9 @@
 Game.ImportLibrary("system/scripts/init_original.lua")
 
+if TEMPLATE("enable_remote_lua") then
+    RemoteLua.Init()
+end
+
 Init.tNewGameInventory = TEMPLATE("new_game_inventory")
 
 Init.iNumRandoTextBoxes = TEMPLATE("textbox_count")
