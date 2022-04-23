@@ -4,14 +4,14 @@ import json
 from enum import Enum
 from pathlib import Path
 from typing import Type
-from construct import Container
 
+from construct import Container
 from mercury_engine_data_structures.formats import Bmsad, Bmmap
 
 from open_dread_rando import model_data
 from open_dread_rando.lua_editor import LuaEditor
 from open_dread_rando.map_icons import MapIconEditor
-from open_dread_rando.patcher_editor import PatcherEditor, path_for_level
+from open_dread_rando.patcher_editor import PatcherEditor
 from open_dread_rando.text_patches import patch_text
 
 EXPANSION_ITEM_IDS = {
@@ -20,6 +20,9 @@ EXPANSION_ITEM_IDS = {
     "ITEM_WEAPON_MISSILE_MAX",
     "ITEM_WEAPON_POWER_BOMB_MAX",
     "ITEM_WEAPON_POWER_BOMB",
+
+    # For multiworld
+    "ITEM_NONE",
 }
 
 
@@ -37,7 +40,8 @@ class PickupType(Enum):
 
 
 class BasePickup:
-    def __init__(self, lua_editor: LuaEditor, pickup: dict, pickup_id: int, configuration: dict, map_icon_editor: MapIconEditor):
+    def __init__(self, lua_editor: LuaEditor, pickup: dict, pickup_id: int, configuration: dict,
+                 map_icon_editor: MapIconEditor):
         self.lua_editor = lua_editor
         self.pickup = pickup
         self.pickup_id = pickup_id
@@ -130,7 +134,8 @@ class ActorPickup(BasePickup):
 
         return bmsad
 
-    def patch_model(self, editor: PatcherEditor, selected_model_data: model_data.ModelData, actor: Container, new_template: dict):
+    def patch_model(self, editor: PatcherEditor, selected_model_data: model_data.ModelData, actor: Container,
+                    new_template: dict):
         # Update used model
         new_template["property"]["model_name"] = selected_model_data.bcmdl_path
         model_updater = new_template["property"]["components"]["MODELUPDATER"]
@@ -143,7 +148,7 @@ class ActorPickup(BasePickup):
             components = new_template["property"]["components"]
             components["MATERIALFX"] = grapple_components["MATERIALFX"]
             components["FX"] = grapple_components["FX"]
-        
+
         if selected_model_data.transform is not None:
             model_updater["fields"] = {
                 "empty_string": "",
@@ -152,18 +157,18 @@ class ActorPickup(BasePickup):
                     "vInitScale": list(selected_model_data.transform.scale)
                 }
             }
-            actor.vPos = [a+b for a,b in zip(actor.vPos, selected_model_data.transform.position)]
-            actor.vAng = [a+b for a,b in zip(actor.vAng, selected_model_data.transform.angle)]
-        
+            actor.vPos = [a + b for a, b in zip(actor.vPos, selected_model_data.transform.position)]
+            actor.vAng = [a + b for a, b in zip(actor.vAng, selected_model_data.transform.angle)]
+
         # Animation/BMSAS
         new_template["property"]["binaries"][0] = selected_model_data.bmsas
-    
+
     def patch_minimap_icon(self, editor: PatcherEditor, actor: Container):
         if "map_icon" in self.pickup and "original_actor" in self.pickup["map_icon"]:
             map_actor = self.pickup["map_icon"]["original_actor"]
         else:
             map_actor = self.pickup["pickup_actor"]
-        
+
         map_def = editor.get_scenario_file(map_actor["scenario"], Bmmap)
         if map_actor["actor"] in map_def.items:
             icon = map_def.items.pop(map_actor["actor"])
@@ -246,6 +251,7 @@ class ActorDefPickup(BasePickup):
     def patch(self, editor: PatcherEditor):
         raise NotImplementedError()
 
+
 class EmmiPickup(ActorDefPickup):
     def patch(self, editor: PatcherEditor):
         bmsad_path, actordef = self._patch_actordef_pickup(editor, "sInventoryItemOnKilled")
@@ -282,6 +288,7 @@ _PICKUP_TYPE_TO_CLASS: dict[PickupType, Type[BasePickup]] = {
 }
 
 
-def pickup_object_for(lua_scripts: LuaEditor, pickup: dict, pickup_id: int, configuration: dict, map_icon_editor: MapIconEditor) -> "BasePickup":
+def pickup_object_for(lua_scripts: LuaEditor, pickup: dict, pickup_id: int, configuration: dict,
+                      map_icon_editor: MapIconEditor) -> "BasePickup":
     pickup_type = PickupType(pickup["pickup_type"])
     return _PICKUP_TYPE_TO_CLASS[pickup_type](lua_scripts, pickup, pickup_id, configuration, map_icon_editor)

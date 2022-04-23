@@ -19,6 +19,7 @@ SPECIFIC_CLASSES = {
     "ITEM_MULTILOCKON": "RandomizerStormMissile",
 }
 
+
 class LuaEditor:
     def __init__(self):
         self._progressive_classes = {}

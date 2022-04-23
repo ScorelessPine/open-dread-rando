@@ -7,8 +7,10 @@ function CoreX_SuperQuetzoa.LaunchDamageSound(_ARG_0_)
 end
 
 function CoreX_SuperQuetzoa.OnBigXAbsorbed(_ARG_0_)
+  RandomizerPowerup.MarkLocationCollected("escue")
   Game.PushSetup("PostSuperQuetzoaDead", true, false)
   GUI.ShowMessage("#GUI_ITEM_ACQUIRED_MULTI_LOCK", true, 'TEMPLATE("escue").OnPickedUp', false)
+
   local door = Game.GetActor("doorpowerpower_014")
   if  door ~= nil then
     door.LIFE:UnLockDoor()
